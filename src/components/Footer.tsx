@@ -1,4 +1,3 @@
-import { motion } from 'motion/react';
 import { Phone, MapPin, Instagram } from 'lucide-react';
 
 const addressHref = '#';
@@ -74,8 +73,8 @@ export default function Footer() {
             © {new Date().getFullYear()} Студия загара «Бронза». Все права защищены.
           </p>
           <div className="flex gap-8 text-white/20 text-[10px] uppercase tracking-[0.2em]">
-            <a href="#" className="hover:text-white transition-colors">Политика конфиденциальности</a>
-            <a href="#" className="hover:text-white transition-colors">Публичная оферта</a>
+            <a href="/privacy-policy.txt" download className="hover:text-white transition-colors">Политика конфиденциальности</a>
+            <a href="/public-offer.txt" download className="hover:text-white transition-colors">Публичная оферта</a>
           </div>
         </div>
       </div>

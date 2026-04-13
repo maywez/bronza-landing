@@ -36,6 +36,7 @@ export default function BookingSection() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [status, setStatus] = useState<BookingStatus>('idle');
   const [message, setMessage] = useState('');
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
@@ -135,6 +136,12 @@ export default function BookingSection() {
       return;
     }
 
+    if (!privacyAccepted) {
+      setStatus('error');
+      setMessage('Нужно согласиться на обработку персональных данных.');
+      return;
+    }
+
     try {
       setStatus('submitting');
       setMessage('');
@@ -164,6 +171,7 @@ export default function BookingSection() {
       setMessage('Запись отправлена. Менеджер свяжется для подтверждения.');
       setFullName('');
       setPhone('');
+      setPrivacyAccepted(false);
       setSelectedTime(null);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Что-то пошло не так.';
@@ -371,6 +379,22 @@ export default function BookingSection() {
                     placeholder="+7 (900) 000-00-00"
                     className="w-full rounded-2xl border border-charcoal/10 bg-sand/40 px-4 py-4 outline-none transition focus:border-bronze"
                   />
+                </label>
+
+                <label className="flex items-start gap-3 rounded-2xl border border-charcoal/8 bg-sand/35 px-4 py-4 text-sm text-charcoal/70 leading-relaxed">
+                  <input
+                    type="checkbox"
+                    checked={privacyAccepted}
+                    onChange={(event) => setPrivacyAccepted(event.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-charcoal/20 text-bronze accent-bronze"
+                  />
+                  <span>
+                    Я соглашаюсь на обработку персональных данных и подтверждаю, что ознакомлен с{' '}
+                    <a href="/privacy-policy.txt" download className="text-charcoal underline underline-offset-4 hover:text-bronze transition-colors">
+                      политикой конфиденциальности
+                    </a>
+                    .
+                  </span>
                 </label>
 
                 <button

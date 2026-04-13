@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Instagram, MapPin, ArrowRight } from 'lucide-react';
+import { MapPin, ArrowRight } from 'lucide-react';
 
 const addressHref = '#';
 
@@ -99,22 +99,6 @@ export default function Hero() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-bronze/20 to-transparent mix-blend-overlay" />
             </div>
-
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute -bottom-6 -left-6 glass p-6 rounded-3xl shadow-xl"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bronze-gradient flex items-center justify-center text-white">
-                  <Instagram className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-widest text-charcoal/40 font-bold">Follow us</div>
-                  <div className="text-sm font-display font-medium">@bronza_45</div>
-                </div>
-              </div>
-            </motion.div>
           </motion.div>
         </div>
       </div>
