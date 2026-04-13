@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+  --font-serif: "Cormorant Garamond", serif;
+
+  --color-ivory: #FDFCF9;
+  --color-charcoal: #1A1A1A;
+  --color-bronze: #C5A059;
+  --color-champagne: #E8DCC4;
+  --color-sand: #F5F2ED;
+}
+
+@layer base {
+  body {
+    @apply bg-ivory text-charcoal font-sans antialiased;
+  }
+}
+
+.glass {
+  @apply bg-white/30 backdrop-blur-md border border-white/20;
+}
+
+.text-glow {
+  text-shadow: 0 0 20px rgba(197, 160, 89, 0.2);
+}
+
+.bronze-gradient {
+  background: linear-gradient(135deg, #C5A059 0%, #E8DCC4 100%);
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
