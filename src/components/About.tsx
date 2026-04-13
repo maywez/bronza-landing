@@ -30,19 +30,19 @@ export default function About() {
           whileInView={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
           viewport={{ once: true }}
-          className="flex flex-col md:flex-row items-center justify-center gap-12 text-charcoal/40 font-display text-xs uppercase tracking-[0.3em] font-bold"
+          className="mx-auto flex max-w-3xl flex-col md:flex-row items-center justify-center gap-6 md:gap-10 text-center text-charcoal/40 font-display text-xs uppercase tracking-[0.3em] font-bold"
         >
-          <div className="flex items-center gap-3">
-            <span className="w-8 h-[1px] bg-charcoal/20" />
-            Современное оборудование
+          <div className="flex items-center justify-center gap-3 text-center">
+            <span className="w-8 h-[1px] bg-charcoal/20 shrink-0" />
+            <span>Современное оборудование</span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="w-8 h-[1px] bg-charcoal/20" />
-            Премиальный сервис
+          <div className="flex items-center justify-center gap-3 text-center">
+            <span className="w-8 h-[1px] bg-charcoal/20 shrink-0" />
+            <span>Премиальный сервис</span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="w-8 h-[1px] bg-charcoal/20" />
-            Уютная атмосфера
+          <div className="flex items-center justify-center gap-3 text-center">
+            <span className="w-8 h-[1px] bg-charcoal/20 shrink-0" />
+            <span>Уютная атмосфера</span>
           </div>
         </motion.div>
       </div>

@@ -1,7 +1,20 @@
-import { FormEvent, useMemo, useState } from 'react';
-import { format, addDays, startOfToday, eachDayOfInterval, isSameDay, addMinutes, isBefore, setHours, setMinutes, setSeconds } from 'date-fns';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  format,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameDay,
+  addMinutes,
+  isBefore,
+  setHours,
+  setMinutes,
+  setSeconds,
+  startOfMonth,
+  addMonths,
+  isBefore as isBeforeDate,
+} from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Clock, CheckCircle2, LoaderCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, CheckCircle2, ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 
@@ -12,17 +25,28 @@ const APPOINTMENT_DURATION = 15;
 type BookingStatus = 'idle' | 'submitting' | 'success' | 'error';
 
 export default function BookingSection() {
-  const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
+  const today = useMemo(() => setSeconds(setMinutes(setHours(new Date(), 0), 0), 0), []);
+  const firstAvailableDate = today;
+  const bookingRangeStart = startOfMonth(today);
+  const bookingRangeEnd = endOfMonth(addMonths(today, 1));
+
+  const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState<BookingStatus>('idle');
   const [message, setMessage] = useState('');
+  const daysScrollRef = useRef<HTMLDivElement | null>(null);
 
-  const days = eachDayOfInterval({
-    start: startOfToday(),
-    end: addDays(startOfToday(), 13),
-  });
+  const days = useMemo(() => eachDayOfInterval({
+    start: bookingRangeStart,
+    end: bookingRangeEnd,
+  }), [bookingRangeEnd, bookingRangeStart]);
+
+  useEffect(() => {
+    const selectedButton = daysScrollRef.current?.querySelector<HTMLButtonElement>('[data-selected="true"]');
+    selectedButton?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, [selectedDate]);
 
   const generateTimeSlots = (date: Date) => {
     const slots: string[] = [];
@@ -49,6 +73,19 @@ export default function BookingSection() {
     date = setSeconds(date, 0);
     return date;
   }, [selectedDate, selectedTime]);
+
+  const scrollDays = (direction: 'left' | 'right') => {
+    const container = daysScrollRef.current;
+    if (!container) return;
+
+    const amount = Math.max(container.clientWidth * 0.7, 220);
+    container.scrollBy({
+      left: direction === 'left' ? -amount : amount,
+      behavior: 'smooth',
+    });
+  };
+
+  const isDayDisabled = (day: Date) => isBeforeDate(day, startOfMonth(firstAvailableDate)) || isBeforeDate(day, firstAvailableDate);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -120,7 +157,7 @@ export default function BookingSection() {
             Выберите удобное время
           </motion.h2>
           <p className="text-charcoal/55 max-w-2xl mx-auto leading-relaxed">
-            Оставьте имя и номер телефона, а запись автоматически попадёт в Google Календарь студии.
+            Сейчас можно пролистать весь текущий месяц и весь следующий, чтобы клиенту было проще выбрать время заранее.
           </p>
         </div>
 
@@ -140,30 +177,61 @@ export default function BookingSection() {
               </div>
             </div>
 
-            <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-4 no-scrollbar">
-              {days.map((day) => (
-                <button
-                  key={day.toISOString()}
-                  type="button"
-                  onClick={() => {
-                    setSelectedDate(day);
-                    setSelectedTime(null);
-                    setStatus('idle');
-                    setMessage('');
-                  }}
-                  className={cn(
-                    'flex-shrink-0 w-20 h-24 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 border',
-                    isSameDay(day, selectedDate)
-                      ? 'bg-bronze border-bronze text-white shadow-lg shadow-bronze/20 scale-105'
-                      : 'bg-white border-charcoal/5 hover:border-bronze/30 text-charcoal'
-                  )}
-                >
-                  <span className="text-[10px] uppercase tracking-wider mb-1 opacity-70">
-                    {format(day, 'eee', { locale: ru })}
-                  </span>
-                  <span className="text-2xl font-display font-medium">{format(day, 'd')}</span>
-                </button>
-              ))}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                aria-label="Показать предыдущие даты"
+                onClick={() => scrollDays('left')}
+                className="shrink-0 w-11 h-11 rounded-full bg-white border border-charcoal/8 shadow-sm flex items-center justify-center text-charcoal hover:border-bronze/40 hover:text-bronze transition"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+
+              <div
+                ref={daysScrollRef}
+                className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-4 no-scrollbar scroll-smooth"
+              >
+                {days.map((day) => {
+                  const disabled = isDayDisabled(day);
+                  const selected = isSameDay(day, selectedDate);
+
+                  return (
+                    <button
+                      key={day.toISOString()}
+                      type="button"
+                      data-selected={selected}
+                      disabled={disabled}
+                      onClick={() => {
+                        setSelectedDate(day);
+                        setSelectedTime(null);
+                        setStatus('idle');
+                        setMessage('');
+                      }}
+                      className={cn(
+                        'flex-shrink-0 w-20 h-24 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 border',
+                        selected
+                          ? 'bg-bronze border-bronze text-white shadow-lg shadow-bronze/20 scale-105'
+                          : 'bg-white border-charcoal/5 hover:border-bronze/30 text-charcoal',
+                        disabled && 'opacity-35 cursor-not-allowed hover:border-charcoal/5 text-charcoal/40'
+                      )}
+                    >
+                      <span className="text-[10px] uppercase tracking-wider mb-1 opacity-70">
+                        {format(day, 'eee', { locale: ru })}
+                      </span>
+                      <span className="text-2xl font-display font-medium">{format(day, 'd')}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                aria-label="Показать следующие даты"
+                onClick={() => scrollDays('right')}
+                className="shrink-0 w-11 h-11 rounded-full bg-white border border-charcoal/8 shadow-sm flex items-center justify-center text-charcoal hover:border-bronze/40 hover:text-bronze transition"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
             </div>
 
             <div className="space-y-6">
