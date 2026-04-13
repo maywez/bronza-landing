@@ -12,6 +12,7 @@ import {
   startOfMonth,
   addMonths,
   isBefore as isBeforeDate,
+  isSameMonth,
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Clock, CheckCircle2, ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react';
@@ -23,12 +24,13 @@ const INTERVAL = 15;
 const APPOINTMENT_DURATION = 15;
 
 type BookingStatus = 'idle' | 'submitting' | 'success' | 'error';
+type MonthTab = 'current' | 'next';
 
 export default function BookingSection() {
   const today = useMemo(() => setSeconds(setMinutes(setHours(new Date(), 0), 0), 0), []);
-  const firstAvailableDate = today;
-  const bookingRangeStart = startOfMonth(today);
-  const bookingRangeEnd = endOfMonth(addMonths(today, 1));
+  const currentMonthStart = startOfMonth(today);
+  const nextMonthStart = startOfMonth(addMonths(today, 1));
+  const nextMonthEnd = endOfMonth(nextMonthStart);
 
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -36,17 +38,29 @@ export default function BookingSection() {
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState<BookingStatus>('idle');
   const [message, setMessage] = useState('');
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [activeMonth, setActiveMonth] = useState<MonthTab>('current');
   const daysScrollRef = useRef<HTMLDivElement | null>(null);
 
   const days = useMemo(() => eachDayOfInterval({
-    start: bookingRangeStart,
-    end: bookingRangeEnd,
-  }), [bookingRangeEnd, bookingRangeStart]);
+    start: currentMonthStart,
+    end: nextMonthEnd,
+  }), [currentMonthStart, nextMonthEnd]);
+
+  const visibleDays = useMemo(
+    () => days.filter((day) => activeMonth === 'current' ? isSameMonth(day, today) : isSameMonth(day, nextMonthStart)),
+    [activeMonth, days, nextMonthStart, today]
+  );
+
+  useEffect(() => {
+    const shouldShowNextMonth = isSameMonth(selectedDate, nextMonthStart);
+    setActiveMonth(shouldShowNextMonth ? 'next' : 'current');
+  }, [nextMonthStart, selectedDate]);
 
   useEffect(() => {
     const selectedButton = daysScrollRef.current?.querySelector<HTMLButtonElement>('[data-selected="true"]');
     selectedButton?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }, [selectedDate]);
+  }, [activeMonth, selectedDate]);
 
   const generateTimeSlots = (date: Date) => {
     const slots: string[] = [];
@@ -74,6 +88,12 @@ export default function BookingSection() {
     return date;
   }, [selectedDate, selectedTime]);
 
+  const bookedSlotKeys = useMemo(() => new Set(bookedSlots), [bookedSlots]);
+  const availableTimeSlots = useMemo(
+    () => timeSlots.filter((time) => !bookedSlotKeys.has(`${format(selectedDate, 'yyyy-MM-dd')}_${time}`)),
+    [bookedSlotKeys, selectedDate, timeSlots]
+  );
+
   const scrollDays = (direction: 'left' | 'right') => {
     const container = daysScrollRef.current;
     if (!container) return;
@@ -85,12 +105,25 @@ export default function BookingSection() {
     });
   };
 
-  const isDayDisabled = (day: Date) => isBeforeDate(day, startOfMonth(firstAvailableDate)) || isBeforeDate(day, firstAvailableDate);
+  const isDayDisabled = (day: Date) => isBeforeDate(day, today);
+
+  const handleMonthChange = (month: MonthTab) => {
+    setActiveMonth(month);
+    const monthDays = days.filter((day) => month === 'current' ? isSameMonth(day, today) : isSameMonth(day, nextMonthStart));
+    const firstSelectableDay = monthDays.find((day) => !isDayDisabled(day)) ?? monthDays[0];
+
+    if (firstSelectableDay) {
+      setSelectedDate(firstSelectableDay);
+      setSelectedTime(null);
+      setStatus('idle');
+      setMessage('');
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!selectedDateTime) {
+    if (!selectedDateTime || !selectedTime) {
       setStatus('error');
       setMessage('Сначала выберите дату и время.');
       return;
@@ -125,8 +158,10 @@ export default function BookingSection() {
         throw new Error(data.error || 'Не удалось сохранить запись.');
       }
 
+      const slotKey = `${format(selectedDate, 'yyyy-MM-dd')}_${selectedTime}`;
+      setBookedSlots((prev) => [...prev, slotKey]);
       setStatus('success');
-      setMessage('Запись отправлена. Мы сохранили её в календарь.');
+      setMessage('Запись отправлена. Менеджер свяжется для подтверждения.');
       setFullName('');
       setPhone('');
       setSelectedTime(null);
@@ -157,7 +192,7 @@ export default function BookingSection() {
             Выберите удобное время
           </motion.h2>
           <p className="text-charcoal/55 max-w-2xl mx-auto leading-relaxed">
-            Сейчас можно пролистать весь текущий месяц и весь следующий, чтобы клиенту было проще выбрать время заранее.
+            Можно листать даты стрелками и переключаться между текущим и следующим месяцем.
           </p>
         </div>
 
@@ -167,13 +202,34 @@ export default function BookingSection() {
             whileInView={{ opacity: 1, x: 0 }}
             className="space-y-8"
           >
-            <div className="flex items-center justify-between mb-4 gap-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
               <h3 className="font-display text-lg flex items-center gap-2">
                 <CalendarIcon className="w-5 h-5 text-bronze" />
                 Дата визита
               </h3>
-              <div className="text-sm text-charcoal/50 font-medium whitespace-nowrap">
-                {format(selectedDate, 'LLLL yyyy', { locale: ru })}
+              <div className="flex items-center gap-3 justify-between md:justify-end">
+                <div className="inline-flex rounded-full border border-charcoal/10 bg-white p-1">
+                  <button
+                    type="button"
+                    onClick={() => handleMonthChange('current')}
+                    className={cn(
+                      'px-4 py-2 rounded-full text-[11px] uppercase tracking-[0.22em] font-display transition',
+                      activeMonth === 'current' ? 'bg-charcoal text-white' : 'text-charcoal/55 hover:text-charcoal'
+                    )}
+                  >
+                    {format(today, 'LLLL', { locale: ru })}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMonthChange('next')}
+                    className={cn(
+                      'px-4 py-2 rounded-full text-[11px] uppercase tracking-[0.22em] font-display transition',
+                      activeMonth === 'next' ? 'bg-charcoal text-white' : 'text-charcoal/55 hover:text-charcoal'
+                    )}
+                  >
+                    {format(nextMonthStart, 'LLLL', { locale: ru })}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -191,7 +247,7 @@ export default function BookingSection() {
                 ref={daysScrollRef}
                 className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-4 no-scrollbar scroll-smooth"
               >
-                {days.map((day) => {
+                {visibleDays.map((day) => {
                   const disabled = isDayDisabled(day);
                   const selected = isSameDay(day, selectedDate);
 
@@ -235,12 +291,17 @@ export default function BookingSection() {
             </div>
 
             <div className="space-y-6">
-              <h3 className="font-display text-lg flex items-center gap-2">
-                <Clock className="w-5 h-5 text-bronze" />
-                Доступное время
-              </h3>
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="font-display text-lg flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-bronze" />
+                  Доступное время
+                </h3>
+                <span className="text-xs uppercase tracking-[0.22em] text-charcoal/35">
+                  Свободно: {availableTimeSlots.length}
+                </span>
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-4 gap-2">
-                {timeSlots.map((time) => (
+                {availableTimeSlots.map((time) => (
                   <button
                     key={time}
                     type="button"
@@ -260,6 +321,9 @@ export default function BookingSection() {
                   </button>
                 ))}
               </div>
+              {!availableTimeSlots.length && (
+                <p className="text-sm text-charcoal/45">На эту дату свободных окошек пока нет, выберите другой день.</p>
+              )}
             </div>
           </motion.div>
 
@@ -364,10 +428,6 @@ export default function BookingSection() {
                   {message}
                 </p>
               )}
-
-              <p className="text-[10px] text-center mt-6 text-charcoal/40 leading-relaxed">
-                После отправки заявка сохраняется в календаре студии. Позже можно добавить SMS, Telegram или WhatsApp-уведомления.
-              </p>
             </div>
           </motion.div>
         </div>

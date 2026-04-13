@@ -1,5 +1,7 @@
 import { motion } from 'motion/react';
-import { Phone, MapPin, Instagram, MessageCircle } from 'lucide-react';
+import { Phone, MapPin, Instagram } from 'lucide-react';
+
+const addressHref = '#';
 
 export default function Footer() {
   return (
@@ -9,7 +11,7 @@ export default function Footer() {
           <div className="space-y-8">
             <h2 className="text-4xl font-serif italic tracking-tight">Бронза</h2>
             <p className="text-white/40 text-sm leading-relaxed max-w-xs">
-              Премиальная студия загара в Кургане. Мы создаем идеальный загар и дарим моменты истинного наслаждения.
+              Премиальная студия загара в Кургане. Мы создаём красивый оттенок, спокойный сервис и комфорт, в который хочется возвращаться.
             </p>
             <div className="flex gap-4">
               <a href="https://www.instagram.com/bronza_45" className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-white hover:text-charcoal transition-all duration-300">
@@ -24,18 +26,22 @@ export default function Footer() {
           <div className="space-y-6">
             <h3 className="font-display uppercase tracking-widest text-xs text-bronze font-bold">Контакты</h3>
             <ul className="space-y-4">
-              <li className="flex items-start gap-4 group cursor-pointer">
-                <MapPin className="w-5 h-5 text-white/30 group-hover:text-bronze transition-colors" />
-                <span className="text-white/60 text-sm group-hover:text-white transition-colors">
-                  г. Курган, <br />
-                  ул. Комсомольская, 25
-                </span>
+              <li>
+                <a href={addressHref} className="flex items-start gap-4 group">
+                  <MapPin className="w-5 h-5 text-white/30 group-hover:text-bronze transition-colors shrink-0" />
+                  <span className="text-white/60 text-sm group-hover:text-white transition-colors">
+                    г. Курган, <br />
+                    ул. Комсомольская, 25
+                  </span>
+                </a>
               </li>
-              <li className="flex items-center gap-4 group cursor-pointer">
-                <Phone className="w-5 h-5 text-white/30 group-hover:text-bronze transition-colors" />
-                <span className="text-white/60 text-sm group-hover:text-white transition-colors">
-                  8 919 590 00 80
-                </span>
+              <li>
+                <a href="tel:89195900080" className="flex items-center gap-4 group">
+                  <Phone className="w-5 h-5 text-white/30 group-hover:text-bronze transition-colors" />
+                  <span className="text-white/60 text-sm group-hover:text-white transition-colors">
+                    8 919 590 00 80
+                  </span>
+                </a>
               </li>
             </ul>
           </div>
